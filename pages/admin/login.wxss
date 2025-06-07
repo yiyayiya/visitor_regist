@@ -1,20 +1,58 @@
 /* pages/admin/login.wxss */
 .container {
+  height: 100vh;
+  background-color: #f8f8f8;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   padding: 20px;
+  box-sizing: border-box;
 }
+
 .login-form {
   display: flex;
   flex-direction: column;
+  width: 100%;
+  max-width: 300px;
+  background-color: white;
+  padding: 40px 30px;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.1);
 }
+
 .input {
   margin-bottom: 20px;
-  padding: 10px;
-  border: 1px solid #cccccc;
-  border-radius: 5px;
+  padding: 15px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 16px;
+  background-color: #fafafa;
+  transition: all 0.3s ease;
 }
+
+.input:focus {
+  border-color: #1aad19;
+  background-color: white;
+  box-shadow: 0 0 0 2px rgba(26, 173, 25, 0.2);
+}
+
 .login-btn {
   background-color: #1aad19;
   color: white;
-  padding: 10px 20px;
-  border-radius: 5px;
+  padding: 15px 20px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: bold;
+  border: none;
+  box-shadow: 0 4px 12px rgba(26, 173, 25, 0.3);
+  transition: all 0.3s ease;
+}
+
+.login-btn:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 8px rgba(26, 173, 25, 0.4);
+}
+
+.login-btn::after {
+  border: none;
 }

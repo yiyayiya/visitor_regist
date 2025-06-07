@@ -1,9 +1,0 @@
-{
-  "name": "getPhoneNumberFallback",
-  "version": "1.0.0",
-  "description": "获取手机号云函数-降级版本",
-  "main": "index.js",
-  "dependencies": {
-    "wx-server-sdk": "~2.6.3"
-  }
-}

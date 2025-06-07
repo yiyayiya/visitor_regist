@@ -1,61 +1,173 @@
 /* pages/admin/visitorList.wxss */
 .container {
-  padding: 10px;
-  background-color: #f8f8f8;
+  background-color: #f5f5f5;
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
 }
 
-/* 工具栏样式 */
-.toolbar {
+/* 浮动搜索按钮 */
+.floating-search-btn {
+  position: fixed;
+  top: 50px;
+  right: 15px;
+  width: 44px;
+  height: 44px;
+  background: linear-gradient(135deg, #4a90e2, #357abd);
+  border-radius: 50%;
   display: flex;
   align-items: center;
-  margin-bottom: 15px;
+  justify-content: center;
+  box-shadow: 0 3px 10px rgba(74, 144, 226, 0.4);
+  z-index: 100;
+  transition: all 0.3s ease;
+}
+
+.floating-search-btn:active {
+  transform: scale(0.92);
+  box-shadow: 0 2px 6px rgba(74, 144, 226, 0.6);
+}
+
+.search-icon {
+  font-size: 18px;
+  color: white;
+  font-weight: bold;
+}
+
+/* 搜索模态框样式 */
+.search-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.search-modal-content {
   background-color: white;
-  padding: 10px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin: 0 30px;
+  border-radius: 15px;
+  width: calc(100% - 60px);
+  max-width: 400px;
+  padding: 0;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 }
 
-.filter {
-  flex: 1;
-  margin-right: 10px;
+.search-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 25px;
+  border-bottom: 1px solid #f0f0f0;
+  background-color: #f8f9fa;
 }
 
-.filter-input {
-  padding: 8px 12px;
-  border: 1px solid #e0e0e0;
-  border-radius: 6px;
-  font-size: 14px;
+.search-modal-title {
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+}
+
+.search-modal-close {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 15px;
+  background-color: #e9ecef;
+  font-size: 16px;
+  color: #666;
+}
+
+.search-input-wrapper {
+  padding: 25px;
+}
+
+.search-input {
   width: 100%;
+  padding: 0 20px;
+  border: 2px solid #e9ecef;
+  border-radius: 25px;
+  font-size: 18px;
+  background-color: #f8f9fa;
   box-sizing: border-box;
+  height: 56px;
+  line-height: normal;
+  text-align: left;
 }
 
-.refresh-btn {
+.search-input:focus {
+  border-color: #007aff;
+  background-color: white;
+}
+
+.search-modal-actions {
+  display: flex;
+  padding: 20px 25px;
+  gap: 15px;
+  background-color: #f8f9fa;
+  justify-content: center;
+}
+
+.search-btn-secondary {
+  width: 50%;
+  max-width: 100px;
+  padding: 8px;
+  border: 2px solid #6c757d;
+  border-radius: 8px;
+  background-color: white;
+  color: #6c757d;
+  font-size: 14px;
+}
+
+.search-btn-primary {
+  width: 50%;
+  max-width: 100px;
+  padding: 8px;
+  border: none;
+  border-radius: 8px;
   background-color: #007aff;
   color: white;
-  padding: 8px 16px;
-  border-radius: 6px;
   font-size: 14px;
-  border: none;
 }
 
-.refresh-btn[disabled] {
-  background-color: #ccc;
+/* 滚动视图样式 */
+.visitor-list-scroll {
+  flex: 1;
+  height: calc(100vh - 140px);
+  margin: 0 15px;
+  border-radius: 12px;
+  background-color: white;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
 }
 
 /* 访客列表样式 */
 .visitor-list {
   background-color: white;
-  border-radius: 8px;
-  overflow: hidden;
+  min-height: 100%;
 }
 
 .visitor-item {
   display: flex;
   align-items: center;
-  padding: 15px;
+  padding: 15px 20px;
   border-bottom: 1px solid #f0f0f0;
   background-color: white;
+  position: relative;
+  transition: background-color 0.2s ease;
+}
+
+.visitor-item:hover {
+  background-color: #f8f8f8;
 }
 
 .visitor-item:last-child {
@@ -67,37 +179,77 @@
   height: 60px;
   margin-right: 15px;
   border-radius: 30px;
-  border: 2px solid #f0f0f0;
+  border: 3px solid #f0f0f0;
+  flex-shrink: 0;
 }
 
 .info {
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-width: 0; /* 确保文本能正确省略 */
+}
+
+.visitor-main-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .name {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: bold;
   color: #333;
-  margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .phone {
-  font-size: 14px;
-  color: #666;
-  margin-bottom: 4px;
+  font-size: 16px;
+  color: #007aff;
+  font-weight: 500;
+  letter-spacing: 1px;
 }
 
 .location {
-  font-size: 13px;
-  color: #999;
-  margin-bottom: 4px;
+  font-size: 14px;
+  color: #666;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .time {
   font-size: 12px;
-  color: #bbb;
+  color: #999;
+  margin-top: 2px;
+}
+
+/* 电话按钮样式 - 按照截图样式 */
+.phone-btn {
+  width: 45px;
+  height: 45px;
+  background: linear-gradient(135deg, #ff7043, #ff5722);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 15px;
+  box-shadow: 0 3px 8px rgba(255, 112, 67, 0.4);
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.phone-btn:active {
+  transform: scale(0.92);
+  box-shadow: 0 2px 5px rgba(255, 112, 67, 0.6);
+}
+
+.phone-icon {
+  font-size: 30px;
+  color: white;
+  font-weight: bold;
 }
 
 /* 加载状态 */
@@ -105,31 +257,80 @@
   text-align: center;
   padding: 40px 20px;
   color: #999;
+  font-size: 16px;
 }
 
 /* 空状态 */
 .empty {
   text-align: center;
-  padding: 60px 20px;
+  padding: 80px 20px;
   color: #999;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.empty::before {
+  content: "📝";
+  display: block;
+  font-size: 48px;
+  margin-bottom: 20px;
 }
 
 .retry-btn {
   background-color: #007aff;
   color: white;
-  padding: 8px 20px;
-  border-radius: 6px;
-  margin-top: 15px;
-  font-size: 14px;
+  padding: 10px 25px;
+  border-radius: 8px;
+  margin-top: 20px;
+  font-size: 16px;
+  border: none;
+}
+
+.retry-btn:active {
+  background-color: #0056cc;
 }
 
 /* 统计信息 */
 .statistics {
   text-align: center;
-  padding: 15px;
+  padding: 20px 15px;
   color: #666;
-  font-size: 14px;
+  font-size: 16px;
   background-color: white;
-  margin-top: 10px;
-  border-radius: 8px;
+  margin: 10px 15px 15px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border: 1px solid #f0f0f0;
+}
+
+/* 加载更多状态样式 */
+.load-more {
+  text-align: center;
+  padding: 20px;
+  color: #999;
+  font-size: 14px;
+}
+
+.load-more-loading {
+  color: #007aff;
+}
+
+.load-more-end {
+  color: #999;
+}
+
+.load-more-tips {
+  color: #666;
+}
+
+.load-more-loading::before {
+  content: "⏳ ";
+}
+
+.load-more-end::before {
+  content: "✓ ";
+}
+
+.load-more-tips::before {
+  content: "↑ ";
 }

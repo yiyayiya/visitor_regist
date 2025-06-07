@@ -1,47 +1,91 @@
 <!--pages/admin/visitorList.wxml-->
 <view class="container">
-  <!-- 顶部工具栏 -->
-  <view class="toolbar">
-    <view class="filter">
-      <input 
-        class="filter-input" 
-        placeholder="按小区名称筛选" 
-        value="{{filterCommunity}}"
-        bindinput="onFilterInput" 
-      />
-    </view>
-    <button class="refresh-btn" bindtap="onRefresh" disabled="{{loading}}">
-      {{loading ? '加载中...' : '刷新'}}
-    </button>
+  <!-- 浮动搜索按钮 -->
+  <view class="floating-search-btn" bindtap="showSearchModal">
+    <text class="search-icon">🔍</text>
   </view>
 
-  <!-- 访客列表 -->
-  <view class="visitor-list">
+  <!-- 搜索模态框 -->
+  <view class="search-modal-overlay" wx:if="{{showSearchModal}}" bindtap="hideSearchModal">
+    <view class="search-modal-content" catchtap="preventBubble">
+      <view class="search-modal-header">
+        <text class="search-modal-title">搜索小区</text>
+        <view class="search-modal-close" bindtap="hideSearchModal">✕</view>
+      </view>
+      <view class="search-input-wrapper">
+        <input 
+          class="search-input" 
+          placeholder="请输入小区名称" 
+          placeholder-style="text-align: left; line-height: 56px; vertical-align: middle;"
+          value="{{filterCommunity}}" 
+          bindinput="onSearchInput"
+          confirm-type="search"
+          bindconfirm="confirmSearch"
+        />
+      </view>
+      <view class="search-modal-actions">
+        <button class="search-btn-secondary" bindtap="clearSearch">清空</button>
+        <button class="search-btn-primary" bindtap="confirmSearch">确认</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 访客列表 - 支持下拉刷新和上拉加载 -->
+  <scroll-view 
+    class="visitor-list-scroll"
+    scroll-y="true"
+    refresher-enabled="true"
+    refresher-triggered="{{loading}}"
+    bindrefresherrefresh="onPullDownRefresh"
+    bindscrolltolower="onScrollToLower"
+    lower-threshold="100">
+    
     <!-- 加载中状态 -->
     <view class="loading" wx:if="{{loading}}">
       <text>正在加载访客信息...</text>
     </view>
     
     <!-- 空状态 -->
-    <view class="empty" wx:elif="{{filteredVisitors.length === 0}}">
+    <view class="empty" wx:elif="{{filteredVisitors.length === 0 && !loading}}">
       <text>暂无访客记录</text>
-      <button class="retry-btn" bindtap="onRefresh">重新加载</button>
+      <button class="retry-btn" bindtap="loadVisitors">重新加载</button>
     </view>
     
     <!-- 访客列表 -->
-    <view class="visitor-item" wx:for="{{filteredVisitors}}" wx:key="_id">
-      <image class="avatar" src="{{item.avatarUrl}}" mode="aspectFill" />
-      <view class="info">
-        <view class="name">{{item.nickName}}</view>
-        <view class="phone">{{item.phoneNumber}}</view>
-        <view class="location">{{item.cityName}}/{{item.areaName}}/{{item.communityName}}</view>
-        <view class="time">{{item.registerTime || item._createTime}}</view>
+    <view class="visitor-list">
+      <view class="visitor-item" wx:for="{{filteredVisitors}}" wx:key="_id">
+        <image class="avatar" src="{{item.avatarUrl}}" mode="aspectFill" />
+        <view class="info">
+          <view class="visitor-main-info">
+            <view class="name">{{item.nickName}}</view>
+            <view class="phone">{{item.phoneNumber}}</view>
+            <view class="location">{{item.cityName}}/{{item.areaName}}/{{item.communityName}}</view>
+            <view class="time">{{item.registerTime || item._createTime}}</view>
+          </view>
+        </view>
+        <!-- 电话按钮 -->
+        <view class="phone-btn" bindtap="onCallPhone" data-phone="{{item.phoneNumber}}">
+          <text class="phone-icon">✆</text>
+        </view>
       </view>
     </view>
-  </view>
+    
+    <!-- 加载更多状态 -->
+    <view class="load-more" wx:if="{{filteredVisitors.length > 0}}">
+      <view class="load-more-loading" wx:if="{{loadingMore}}">
+        <text>正在加载更多...</text>
+      </view>
+      <view class="load-more-end" wx:elif="{{!hasMore}}">
+        <text>已加载全部数据</text>
+      </view>
+      <view class="load-more-tips" wx:else>
+        <text>上拉加载更多</text>
+      </view>
+    </view>
+  </scroll-view>
   
   <!-- 统计信息 -->
   <view class="statistics" wx:if="{{!loading}}">
-    <text>共 {{filteredVisitors.length}} 条记录</text>
+    <text>当前显示 {{filteredVisitors.length}} 条记录{{hasMore ? '，上拉加载更多' : '，已加载全部'}}</text>
   </view>
 </view>

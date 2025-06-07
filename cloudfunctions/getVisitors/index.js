@@ -12,9 +12,8 @@ const db = cloud.database()
  */
 exports.main = async (event, context) => {
   const wxContext = cloud.getWXContext()
-  
-  try {
-    const { communityName = '', limit = 100, skip = 0 } = event
+    try {
+    const { communityName = '', limit = 50, skip = 0 } = event
     
     // 构建查询条件
     let query = db.collection('visitors')
@@ -36,12 +35,20 @@ exports.main = async (event, context) => {
       .skip(skip)
       .get()
     
-    console.log('查询访客信息成功，共', result.data.length, '条记录')
+    // 获取总数（仅在第一页时获取，避免重复查询）
+    let total = 0
+    if (skip === 0) {
+      const countResult = await query.count()
+      total = countResult.total
+    }
+    
+    console.log('查询访客信息成功，当前页', result.data.length, '条记录', skip === 0 ? `，总共${total}条` : '')
     
     return {
       success: true,
       data: result.data,
-      total: result.data.length,
+      total: total,
+      hasMore: result.data.length === limit, // 如果返回数据等于请求数量，说明可能还有更多
       message: '获取访客列表成功'
     }
   } catch (err) {

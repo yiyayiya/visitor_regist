@@ -2,5 +2,8 @@
   "navigationBarTitleText": "访客列表管理",
   "enablePullDownRefresh": true,
   "backgroundColor": "#f8f8f8",
+  "navigationStyle": "default",
+  "navigationBarBackgroundColor": "#ffffff",
+  "navigationBarTextStyle": "black",
   "usingComponents": {}
 }

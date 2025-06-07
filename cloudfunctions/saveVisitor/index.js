@@ -12,9 +12,7 @@ const db = cloud.database()
  */
 exports.main = async (event, context) => {
   const wxContext = cloud.getWXContext()
-  
-  try {
-    // 获取传入的访客信息
+    try {    // 获取传入的访客信息
     const {
       avatarUrl,
       nickName,

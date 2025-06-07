@@ -4,58 +4,162 @@ Page({
     visitors: [],
     filteredVisitors: [],
     filterCommunity: '',
-    loading: false
+    loading: false,
+    showSearchModal: false, // 控制搜索弹窗显示
+    // 分页相关数据
+    pageSize: 50, // 每页加载50条数据
+    currentPage: 0, // 当前页码
+    hasMore: true, // 是否还有更多数据
+    loadingMore: false // 是否正在加载更多
   },
   
   onLoad: function () {
     // 加载访客数据
     this.loadVisitors()
+    
+    // 设置右上角按钮
+    wx.setNavigationBarTitle({
+      title: '访客列表管理'
+    })
+  },
+
+  onShow: function () {
+    // 页面显示时检查是否需要刷新数据
+    const app = getApp()
+    if (app.globalData.needRefreshVisitors) {
+      this.loadVisitors()
+      app.globalData.needRefreshVisitors = false
+    }
+  },
+
+  onReady: function () {
+    // 页面初次渲染完成，设置右上角按钮
+    wx.setNavigationBarColor({
+      frontColor: '#000000',
+      backgroundColor: '#ffffff'
+    })
+  },
+
+  // 由于微信小程序限制，我们将通过页面内的浮动按钮来实现搜索功能
+  // 暂时移除导航栏按钮相关代码
+
+  // 处理右上角菜单按钮点击
+  onShareAppMessage: function () {
+    return {
+      title: '访客列表管理',
+      path: '/pages/admin/visitorList'
+    }
   },
 
   // 从云数据库加载访客数据
-  loadVisitors: function () {
-    this.setData({ loading: true })
+  loadVisitors: function (loadMore = false) {
+    if (loadMore) {
+      // 加载更多数据
+      if (!this.data.hasMore || this.data.loadingMore) {
+        return
+      }
+      this.setData({ loadingMore: true })
+    } else {
+      // 首次加载或刷新数据
+      this.setData({ 
+        loading: true,
+        currentPage: 0,
+        hasMore: true,
+        visitors: [],
+        filteredVisitors: []
+      })
+    }
+    
+    const skip = loadMore ? this.data.currentPage * this.data.pageSize : 0
     
     wx.cloud.callFunction({
       name: 'getVisitors',
       data: {
-        communityName: this.data.filterCommunity
+        communityName: this.data.filterCommunity,
+        limit: this.data.pageSize,
+        skip: skip
       }
     }).then(res => {
       console.log('获取访客列表结果：', res.result)
       
       if (res.result.success) {
-        const visitors = res.result.data
+        const newVisitors = res.result.data
+        let allVisitors = []
+        
+        if (loadMore) {
+          // 合并新数据到现有数据
+          allVisitors = [...this.data.visitors, ...newVisitors]
+        } else {
+          // 首次加载，直接使用新数据
+          allVisitors = newVisitors
+        }
+        
+        // 检查是否还有更多数据
+        const hasMore = res.result.hasMore || false
+        
         this.setData({
-          visitors: visitors,
-          filteredVisitors: visitors,
-          loading: false
+          visitors: allVisitors,
+          filteredVisitors: allVisitors,
+          loading: false,
+          loadingMore: false,
+          currentPage: loadMore ? this.data.currentPage + 1 : 1,
+          hasMore: hasMore
         })
         
         // 同时更新全局数据
         const app = getApp()
-        app.globalData.visitors = visitors
+        app.globalData.visitors = allVisitors
+        
+        if (loadMore && newVisitors.length > 0) {
+          wx.showToast({
+            title: `已加载${newVisitors.length}条新数据`,
+            icon: 'success',
+            duration: 1500
+          })
+        }
       } else {
         wx.showToast({
           title: res.result.message || '加载失败',
           icon: 'none'
         })
-        this.setData({ loading: false })
+        this.setData({ 
+          loading: false,
+          loadingMore: false
+        })
       }
     }).catch(err => {
       console.error('调用获取访客列表云函数失败：', err)
-      wx.showToast({
-        title: '加载失败',
-        icon: 'none'
-      })
-      this.setData({ loading: false })
       
-      // 备用方案：从本地全局数据获取
-      const app = getApp()
-      this.setData({
-        visitors: app.globalData.visitors,
-        filteredVisitors: app.globalData.visitors
-      })
+      if (!loadMore) {
+        // 备用方案：从本地全局数据获取（仅在首次加载时）
+        const app = getApp()
+        const localVisitors = app.globalData.visitors || []
+        
+        if (localVisitors.length > 0) {
+          this.setData({
+            visitors: localVisitors,
+            filteredVisitors: localVisitors,
+            loading: false,
+            hasMore: false
+          })
+          wx.showToast({
+            title: '已加载本地数据',
+            icon: 'success'
+          })
+        } else {
+          this.setData({ loading: false })
+          wx.showToast({
+            title: '网络连接失败',
+            icon: 'none'
+          })
+        }
+      } else {
+        this.setData({ loadingMore: false })
+        wx.showToast({
+          title: '加载更多失败',
+          icon: 'none'
+        })
+      }
     })
   },
 
@@ -81,6 +185,60 @@ Page({
     }
   },
 
+  // 显示搜索弹窗
+  showSearchModal: function () {
+    this.setData({
+      showSearchModal: true
+    })
+  },
+
+  // 隐藏搜索弹窗
+  hideSearchModal: function () {
+    this.setData({
+      showSearchModal: false
+    })
+  },
+
+  // 搜索小区名称
+  onSearchInput: function (e) {
+    const filterCommunity = e.detail.value
+    this.setData({
+      filterCommunity: filterCommunity
+    })
+    this.applyFilters()
+  },
+
+  // 确认搜索
+  confirmSearch: function () {
+    this.hideSearchModal()
+    this.applyFilters()
+  },
+
+  // 清空搜索
+  clearSearch: function () {
+    this.setData({
+      filterCommunity: ''
+    })
+    this.applyFilters()
+    this.hideSearchModal()
+  },
+
+  // 应用所有筛选条件
+  applyFilters: function () {
+    let filteredVisitors = this.data.visitors
+
+    // 按小区名称筛选
+    if (this.data.filterCommunity.trim() !== '') {
+      filteredVisitors = filteredVisitors.filter(visitor => 
+        visitor.communityName && visitor.communityName.includes(this.data.filterCommunity)
+      )
+    }
+
+    this.setData({
+      filteredVisitors: filteredVisitors
+    })
+  },
+
   // 刷新数据
   onRefresh: function () {
     this.loadVisitors()
@@ -89,6 +247,64 @@ Page({
   // 下拉刷新
   onPullDownRefresh: function () {
     this.loadVisitors()
-    wx.stopPullDownRefresh()
+    // 延迟停止下拉刷新，确保用户能看到刷新动画
+    setTimeout(() => {
+      wx.stopPullDownRefresh()
+    }, 1000)
+  },
+
+  // 上拉加载更多
+  onReachBottom: function () {
+    if (this.data.hasMore && !this.data.loadingMore) {
+      this.loadVisitors(true)
+    }
+  },
+
+  // 手动加载更多（用于scroll-view的上拉事件）
+  onScrollToLower: function () {
+    if (this.data.hasMore && !this.data.loadingMore) {
+      this.loadVisitors(true)
+    }
+  },
+
+  // 阻止事件冒泡
+  preventBubble: function () {
+    // 空函数，用于阻止冒泡
+  },
+
+  // 拨打电话功能
+  onCallPhone: function (e) {
+    const phone = e.currentTarget.dataset.phone
+    
+    if (!phone) {
+      wx.showToast({
+        title: '暂无电话号码',
+        icon: 'none'
+      })
+      return
+    }
+
+    // 确认拨打电话
+    wx.showModal({
+      title: '拨打电话',
+      content: `是否拨打电话：${phone}？`,
+      success: (res) => {
+        if (res.confirm) {
+          wx.makePhoneCall({
+            phoneNumber: phone,
+            success: () => {
+              console.log('拨打电话成功')
+            },
+            fail: (err) => {
+              console.error('拨打电话失败：', err)
+              wx.showToast({
+                title: '拨打失败',
+                icon: 'none'
+              })
+            }
+          })
+        }
+      }
+    })
   }
 })

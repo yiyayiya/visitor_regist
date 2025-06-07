@@ -1,68 +1,44 @@
 <!--pages/index/index.wxml-->
 <view class="container">
-  <!-- 顶部标题栏 -->
-  <view class="header">
-    <view class="header-title">{{communityName}}</view>
-  </view>
-  
-  <!-- 主要内容区域 -->
-  <view class="main-content">
+  <!-- 主要内容区域 -->  <view class="main-content">
     <view class="subtitle">小区来访登记</view>
     
-    <!-- 定位图标 -->
-    <view class="location-icon">
-      <view class="icon-circle">
-        <text class="icon-location">📍</text>
-      </view>
-    </view>
-    
     <!-- 地址信息 -->
-    <view class="property-name">{{communityName}}物业</view>
-    <view class="address-info">{{areaName}} / {{cityName}}</view>
-    
-    <!-- 用户信息填写区域 - 紧凑设计 -->
-    <view class="user-info-compact">
-      <!-- 头像和昵称一行显示 -->
-      <view class="user-info-row">
-        <!-- 头像选择 -->
-        <view class="avatar-section-compact">
-          <button class="avatar-wrapper-compact" open-type="chooseAvatar" bind:chooseavatar="onChooseAvatar">
-            <image class="avatar-compact" src="{{avatarUrl}}" mode="aspectFill"></image>
-          </button>
-        </view>
-        
-        <!-- 昵称输入 -->
-        <view class="nickname-section-compact">
-          <input 
-            type="nickname" 
-            class="nickname-input-compact" 
-            placeholder="点击输入昵称"
-            value="{{nickName}}"
-            bindinput="onNickNameInput"/>
-        </view>
-      </view>
-      
-      <!-- 提示文字 -->
-      <view class="user-info-tips">
-        <text class="tip-text">{{nickName ? '已填写昵称' : '请选择头像并输入昵称'}}</text>
+    <view class="property-name">{{communityName}}</view>
+    <view class="address-info">{{areaName}} / {{cityName}}</view>    <!-- 用户信息填写区域 -->
+    <view class="user-info-section">
+      <!-- 头像选择 - 文字在左侧 -->
+      <view class="avatar-row">
+        <text class="section-title">请选择头像</text>
+        <button class="avatar-wrapper" open-type="chooseAvatar" bind:chooseavatar="onChooseAvatar">
+          <image class="avatar" src="{{avatarUrl}}" mode="aspectFill"></image>
+        </button>
+      </view>      <!-- 昵称输入 - 文字在左侧 -->
+      <view class="nickname-row">
+        <text class="section-title">请选择昵称</text>
+        <input 
+          type="nickname" 
+          class="nickname-input" 
+          placeholder="请输入昵称"
+          value="{{nickName}}"
+          bindinput="onNickNameInput"/>
       </view>
     </view>
-  </view>
-
-  <!-- 底部按钮区域 -->
-  <view class="bottom-section">
-    <!-- 一键登记按钮，包含获取手机号权限 -->
-    <button 
-      class="register-btn" 
-      open-type="getPhoneNumber" 
-      bindgetphonenumber="onGetPhoneNumber"
-      disabled="{{!avatarUrl || avatarUrl === defaultAvatarUrl || !nickName}}">
-      点击一键登记
-    </button>
+    
+    <!-- 一键登记按钮 -->
+    <view class="register-btn-row">
+      <button 
+        class="register-btn {{(!avatarUrl || avatarUrl === defaultAvatarUrl || !nickName) ? 'disabled' : ''}}" 
+        open-type="getPhoneNumber" 
+        bindgetphonenumber="onGetPhoneNumber"
+        disabled="{{!avatarUrl || avatarUrl === defaultAvatarUrl || !nickName}}">
+        点击一键登记
+      </button>
+    </view>
   </view>
   
-  <!-- 管理员入口 -->
-  <view class="admin-entrance">
+  <!-- 管理员入口 - 放在右下角 -->
+  <view class="admin-entrance-fixed">
     <text class="admin-link" bindtap="onAdminLogin">管理员登录</text>
   </view>
 </view>

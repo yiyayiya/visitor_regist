@@ -20,6 +20,7 @@ App({
   globalData: {
     // 全局数据
     userInfo: null,
-    visitors: []
+    visitors: [],
+    needRefreshVisitors: false
   }
 })

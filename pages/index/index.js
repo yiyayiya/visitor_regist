@@ -4,27 +4,30 @@ const util = require('../../utils/util.js')
 // 默认头像
 const defaultAvatarUrl = 'https://mmbiz.qpic.cn/mmbiz/icTdbqWNOwNRna42FI242Lcia07jQodd2FJGIYQfG0LAJGFxM4FbnQP6yfMxBgJ0F3YRqJCJ1aPAK2dQagdusBZg/0'
 
-Page({
-  data: {
+Page({  data: {
     communityName: '',
     areaName: '',
     cityName: '',
     avatarUrl: defaultAvatarUrl, // 用户头像
+    defaultAvatarUrl: defaultAvatarUrl, // 默认头像URL，供WXML使用
     nickName: '', // 用户昵称
     userInfo: null // 存储用户基本信息
-  },
-  onLoad: function (options) {
+  },onLoad: function (options) {
     // 页面加载时，解析传入的参数
     if (options.community_name && options.area_name && options.city_name) {
       this.setData({
-        communityName: options.community_name,
-        areaName: options.area_name,
-        cityName: options.city_name
+        communityName: decodeURIComponent(options.community_name),
+        areaName: decodeURIComponent(options.area_name),
+        cityName: decodeURIComponent(options.city_name)
+      })
+      
+      // 动态设置导航栏标题
+      wx.setNavigationBarTitle({
+        title: decodeURIComponent(options.community_name)
       })
     }
   },
-  
-  // 选择头像回调
+    // 选择头像回调
   onChooseAvatar: function(e) {
     const { avatarUrl } = e.detail
     this.setData({
@@ -106,24 +109,11 @@ Page({
     if (e.detail.errMsg === 'getPhoneNumber:ok') {
       // 手机号获取成功
       const phoneCode = e.detail.code
-      this.decodePhoneNumber(phoneCode)
-    } else {
-      // 用户拒绝授权手机号，强制要求手机号
-      wx.showModal({
-        title: '需要手机号授权',
-        content: '访客登记需要提供手机号码，请重新授权或手动输入',
-        cancelText: '手动输入',
-        confirmText: '重新授权',
-        success: (res) => {
-          if (res.confirm) {
-            wx.showToast({
-              title: '请重新点击登记按钮',
-              icon: 'none'
-            })
-          } else {
-            this.showPhoneInputDialog()
-          }
-        }
+      this.decodePhoneNumber(phoneCode)    } else {
+      // 获取手机号失败，直接跳转到登记失败界面
+      console.log('用户拒绝授权手机号或获取失败')
+      wx.navigateTo({
+        url: `/pages/result/result?success=false&communityName=${encodeURIComponent(this.data.communityName)}`
       })
     }
   },
@@ -147,35 +137,10 @@ Page({
       if (res.result.success) {
         const phoneNumber = res.result.phoneNumber
         this.saveVisitorInfoToCloud(this.data.userInfo, phoneNumber)
-      } else {
-        // 强制要求获取手机号，不允许跳过
+      } else {        // 获取手机号失败，直接跳转到登记失败界面
         console.log('获取手机号失败，详细错误：', res.result)
-        
-        let errorMessage = '获取手机号失败'
-        if (res.result.errCode === -604100) {
-          errorMessage = '手机号获取权限未配置，请联系管理员配置权限'
-        } else if (res.result.message) {
-          errorMessage = res.result.message
-        }
-        
-        // 显示错误信息，并提供重试和手动输入选项
-        wx.showModal({
-          title: '获取手机号失败',
-          content: errorMessage + '\n\n必须提供手机号才能完成登记',
-          cancelText: '手动输入',
-          confirmText: '重试',
-          success: (modalRes) => {
-            if (modalRes.confirm) {
-              // 重试获取手机号
-              wx.showToast({
-                title: '请重新授权手机号',
-                icon: 'none'
-              })
-            } else {
-              // 手动输入手机号
-              this.showPhoneInputDialog()
-            }
-          }
+        wx.navigateTo({
+          url: `/pages/result/result?success=false&communityName=${encodeURIComponent(this.data.communityName)}`
         })
       }
     }).catch(err => {
@@ -188,22 +153,9 @@ Page({
       } else if (err.errCode === -604100) {
         errorMessage = '手机号获取权限未配置'
       }
-      
-      // 云函数调用失败，强制要求手动输入
-      wx.showModal({
-        title: '获取手机号失败',
-        content: errorMessage + '\n\n必须提供手机号才能完成登记',
-        cancelText: '取消登记',
-        confirmText: '手动输入',
-        success: (modalRes) => {
-          if (modalRes.confirm) {
-            this.showPhoneInputDialog()
-          } else {
-            wx.navigateTo({
-              url: `/pages/result/result?success=false&communityName=${encodeURIComponent(this.data.communityName)}`
-            })
-          }
-        }
+        // 云函数调用失败，直接跳转到登记失败界面
+      wx.navigateTo({
+        url: `/pages/result/result?success=false&communityName=${encodeURIComponent(this.data.communityName)}`
       })
     })
   },
@@ -212,9 +164,7 @@ Page({
   saveVisitorInfoToCloud: function (userInfo, phoneNumber) {
     wx.showLoading({
       title: '正在保存信息'
-    })
-    
-    // 调用云函数保存访客信息
+    })    // 调用云函数保存访客信息
     wx.cloud.callFunction({
       name: 'saveVisitor',
       data: {
@@ -228,11 +178,13 @@ Page({
     }).then(res => {
       wx.hideLoading()
       console.log('保存访客信息结果：', res.result)
-      
-      if (res.result.success) {
+        if (res.result.success) {
         // 同时保存到本地全局数据（为了管理员界面显示）
         const app = getApp()
         app.globalData.visitors.push(res.result.data)
+        
+        // 设置需要刷新访客列表的标志
+        app.globalData.needRefreshVisitors = true
         
         wx.navigateTo({
           url: `/pages/result/result?success=true&communityName=${encodeURIComponent(this.data.communityName)}`
@@ -316,87 +268,10 @@ Page({
       url: `/pages/result/result?success=true&communityName=${encodeURIComponent(this.data.communityName)}`
     })
   },
-  
-  // 管理员登录入口
+    // 管理员登录入口
   onAdminLogin: function () {
     wx.navigateTo({
       url: '/pages/admin/login'
     })
-  },
-
-  // 显示手动输入手机号对话框
-  showManualPhoneInput: function(errorMsg = '') {
-    const that = this
-    wx.showModal({
-      title: '手机号获取失败',
-      content: (errorMsg ? errorMsg + '\n\n' : '') + '请手动输入您的手机号码',
-      showCancel: true,
-      cancelText: '跳过',
-      confirmText: '输入',
-      success: (res) => {
-        if (res.confirm) {
-          // 显示输入框
-          that.showPhoneInputDialog()
-        } else {
-          // 跳过手机号，继续登记
-          that.saveVisitorInfoToCloud(that.data.userInfo, '用户跳过手机号输入')
-        }
-      }
-    })
-  },
-
-  // 显示手机号输入对话框 - 强制要求输入
-  showPhoneInputDialog: function() {
-    const that = this
-    wx.showModal({
-      title: '输入手机号',
-      content: '必须提供手机号才能完成登记\n请输入您的11位手机号码',
-      editable: true,
-      placeholderText: '请输入手机号',
-      cancelText: '取消登记',
-      confirmText: '确定',
-      success: (res) => {
-        if (res.confirm && res.content) {
-          const phoneNumber = res.content.trim()
-          
-          // 验证手机号格式
-          if (that.validatePhoneNumber(phoneNumber)) {
-            that.saveVisitorInfoToCloud(that.data.userInfo, phoneNumber)
-          } else {
-            wx.showModal({
-              title: '手机号格式错误',
-              content: '请输入正确的11位手机号码',
-              showCancel: false,
-              confirmText: '重新输入',
-              success: () => {
-                that.showPhoneInputDialog()
-              }
-            })
-          }
-        } else if (res.confirm && !res.content) {
-          // 用户点击确定但没有输入内容
-          wx.showModal({
-            title: '请输入手机号',
-            content: '手机号不能为空，请输入11位手机号码',
-            showCancel: false,
-            confirmText: '重新输入',
-            success: () => {
-              that.showPhoneInputDialog()
-            }
-          })
-        } else {
-          // 用户取消登记
-          wx.navigateTo({
-            url: `/pages/result/result?success=false&communityName=${encodeURIComponent(that.data.communityName)}`
-          })
-        }
-      }
-    })
-  },
-
-  // 验证手机号格式
-  validatePhoneNumber: function(phoneNumber) {
-    const phoneRegex = /^1[3-9]\d{9}$/
-    return phoneRegex.test(phoneNumber)
   }
 })

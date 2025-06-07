@@ -4,30 +4,20 @@
   background-color: #f8f8f8;
   display: flex;
   flex-direction: column;
-}
-
-/* 顶部标题栏 */
-.header {
-  background-color: white;
-  padding: 20px;
-  text-align: center;
-  border-bottom: 1px solid #eee;
-}
-
-.header-title {
-  font-size: 18px;
-  font-weight: bold;
-  color: #333;
+  justify-content: center;
+  align-items: center;
 }
 
 /* 主要内容区域 */
 .main-content {
-  flex: 1;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   padding: 40px 20px;
+  text-align: center;
+  width: 100%;
+  max-width: 400px;
 }
 
 /* 成功图标 */
@@ -98,6 +88,9 @@
 /* 底部按钮区域 */
 .bottom-section {
   padding: 20px;
+  width: 100%;
+  max-width: 400px;
+  margin-top: 40px;
 }
 
 .retry-btn {

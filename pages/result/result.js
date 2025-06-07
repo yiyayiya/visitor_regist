@@ -7,7 +7,7 @@ Page({
   onLoad: function (options) {
     this.setData({
       success: options.success === 'true',
-      communityName: options.communityName || ''
+      communityName: decodeURIComponent(options.communityName || '')
     })
   },
   onRetry: function () {

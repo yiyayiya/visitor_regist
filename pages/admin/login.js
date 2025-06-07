@@ -16,7 +16,7 @@ Page({
   },
   onLogin: function () {
     // 简单的登录验证
-    if (this.data.username === 'admin' && this.data.password === 'password') {
+    if (this.data.username === '13828852777' && this.data.password === 'LINAN123456') {
       wx.navigateTo({
         url: '/pages/admin/visitorList'
       })
