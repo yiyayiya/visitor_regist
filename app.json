@@ -11,11 +11,10 @@
     "navigationBarTitleText": "小区访客登记",
     "navigationBarTextStyle": "black"
   },
-  "permission": {
-    "scope.userInfo": {
-      "desc": "你的用户信息将用于访客登记"
-    }
-  },
+  "requiredPrivateInfos": [
+    "getLocation",
+    "chooseLocation"
+  ],
   "renderer": "webview",
   "style": "v2",
   "sitemapLocation": "sitemap.json"

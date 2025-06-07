@@ -19,8 +19,36 @@
     <!-- 地址信息 -->
     <view class="property-name">{{communityName}}物业</view>
     <view class="address-info">{{areaName}} / {{cityName}}</view>
+    
+    <!-- 用户信息填写区域 - 紧凑设计 -->
+    <view class="user-info-compact">
+      <!-- 头像和昵称一行显示 -->
+      <view class="user-info-row">
+        <!-- 头像选择 -->
+        <view class="avatar-section-compact">
+          <button class="avatar-wrapper-compact" open-type="chooseAvatar" bind:chooseavatar="onChooseAvatar">
+            <image class="avatar-compact" src="{{avatarUrl}}" mode="aspectFill"></image>
+          </button>
+        </view>
+        
+        <!-- 昵称输入 -->
+        <view class="nickname-section-compact">
+          <input 
+            type="nickname" 
+            class="nickname-input-compact" 
+            placeholder="点击输入昵称"
+            value="{{nickName}}"
+            bindinput="onNickNameInput"/>
+        </view>
+      </view>
+      
+      <!-- 提示文字 -->
+      <view class="user-info-tips">
+        <text class="tip-text">{{nickName ? '已填写昵称' : '请选择头像并输入昵称'}}</text>
+      </view>
+    </view>
   </view>
-  
+
   <!-- 底部按钮区域 -->
   <view class="bottom-section">
     <!-- 一键登记按钮，包含获取手机号权限 -->
@@ -28,7 +56,7 @@
       class="register-btn" 
       open-type="getPhoneNumber" 
       bindgetphonenumber="onGetPhoneNumber"
-      bindtap="onRegister">
+      disabled="{{!avatarUrl || avatarUrl === defaultAvatarUrl || !nickName}}">
       点击一键登记
     </button>
   </view>

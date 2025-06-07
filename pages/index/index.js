@@ -1,11 +1,16 @@
 // pages/index/index.js
 const util = require('../../utils/util.js')
 
+// 默认头像
+const defaultAvatarUrl = 'https://mmbiz.qpic.cn/mmbiz/icTdbqWNOwNRna42FI242Lcia07jQodd2FJGIYQfG0LAJGFxM4FbnQP6yfMxBgJ0F3YRqJCJ1aPAK2dQagdusBZg/0'
+
 Page({
   data: {
     communityName: '',
     areaName: '',
     cityName: '',
+    avatarUrl: defaultAvatarUrl, // 用户头像
+    nickName: '', // 用户昵称
     userInfo: null // 存储用户基本信息
   },
   onLoad: function (options) {
@@ -19,71 +24,111 @@ Page({
     }
   },
   
-  // 点击一键登记按钮时先获取用户基本信息
+  // 选择头像回调
+  onChooseAvatar: function(e) {
+    const { avatarUrl } = e.detail
+    this.setData({
+      avatarUrl
+    })
+    console.log('用户选择头像:', avatarUrl)
+  },
+  
+  // 昵称输入回调
+  onNickNameInput: function(e) {
+    const nickName = e.detail.value
+    this.setData({
+      nickName
+    })
+    console.log('用户输入昵称:', nickName)
+  },
+  
+  // 点击一键登记按钮时的处理（现在主要是验证）
   onRegister: function () {
-    // 获取用户基本信息（头像、昵称）
-    wx.getUserProfile({
-      desc: '用于完善访客信息',
-      success: (res) => {
-        const userInfo = res.userInfo
-        // 保存用户基本信息，等待手机号授权
-        this.setData({
-          userInfo: userInfo
-        })
-        console.log('获取用户基本信息成功:', userInfo)
-      },
-      fail: () => {
-        wx.showToast({
-          title: '需要授权才能登记',
-          icon: 'none'
-        })
-        setTimeout(() => {
-          wx.navigateTo({
-            url: `/pages/result/result?success=false&communityName=${encodeURIComponent(this.data.communityName)}`
-          })
-        }, 1500)
+    // 验证用户是否已经填写了头像和昵称
+    if (!this.data.avatarUrl || this.data.avatarUrl === defaultAvatarUrl) {
+      wx.showToast({
+        title: '请先选择头像',
+        icon: 'none'
+      })
+      return
+    }
+    
+    if (!this.data.nickName || this.data.nickName.trim() === '') {
+      wx.showToast({
+        title: '请先输入昵称',
+        icon: 'none'
+      })
+      return
+    }
+    
+    // 构建用户信息
+    this.setData({
+      userInfo: {
+        avatarUrl: this.data.avatarUrl,
+        nickName: this.data.nickName.trim()
       }
     })
+    
+    console.log('用户信息准备完成:', this.data.userInfo)
   },
 
   // 获取手机号回调
   onGetPhoneNumber: function (e) {
     console.log('手机号授权结果:', e)
     
+    // 先验证用户是否已经填写了头像和昵称
+    if (!this.data.avatarUrl || this.data.avatarUrl === defaultAvatarUrl) {
+      wx.showToast({
+        title: '请先选择头像',
+        icon: 'none'
+      })
+      return
+    }
+    
+    if (!this.data.nickName || this.data.nickName.trim() === '') {
+      wx.showToast({
+        title: '请先输入昵称',
+        icon: 'none'
+      })
+      return
+    }
+    
+    // 构建用户信息
+    const userInfo = {
+      avatarUrl: this.data.avatarUrl,
+      nickName: this.data.nickName.trim()
+    }
+    
+    this.setData({
+      userInfo: userInfo
+    })
+    
     if (e.detail.errMsg === 'getPhoneNumber:ok') {
       // 手机号获取成功
       const phoneCode = e.detail.code
-      
-      // 这里需要调用后端接口解析code获取真实手机号
-      // 由于是演示，我们模拟处理
       this.decodePhoneNumber(phoneCode)
     } else {
-      // 用户拒绝授权手机号
-      if (this.data.userInfo) {
-        // 如果已经获取了用户基本信息，询问是否继续
-        wx.showModal({
-          title: '提示',
-          content: '未授权手机号，是否继续登记？',
-          success: (res) => {
-            if (res.confirm) {
-              this.saveVisitorInfo(this.data.userInfo, '用户未授权手机号')
-            } else {
-              wx.navigateTo({
-                url: `/pages/result/result?success=false&communityName=${encodeURIComponent(this.data.communityName)}`
-              })
-            }
+      // 用户拒绝授权手机号，强制要求手机号
+      wx.showModal({
+        title: '需要手机号授权',
+        content: '访客登记需要提供手机号码，请重新授权或手动输入',
+        cancelText: '手动输入',
+        confirmText: '重新授权',
+        success: (res) => {
+          if (res.confirm) {
+            wx.showToast({
+              title: '请重新点击登记按钮',
+              icon: 'none'
+            })
+          } else {
+            this.showPhoneInputDialog()
           }
-        })
-      } else {
-        // 没有用户基本信息，登记失败
-        wx.navigateTo({
-          url: `/pages/result/result?success=false&communityName=${encodeURIComponent(this.data.communityName)}`
-        })
-      }
+        }
+      })
     }
   },
 
-  // 解析手机号（使用云函数）
+  // 解析手机号（使用云函数）- 强制要求手机号
   decodePhoneNumber: function (code) {
     wx.showLoading({
       title: '正在获取手机号'
@@ -103,29 +148,64 @@ Page({
         const phoneNumber = res.result.phoneNumber
         this.saveVisitorInfoToCloud(this.data.userInfo, phoneNumber)
       } else {
-        wx.showToast({
-          title: res.result.message || '获取手机号失败',
-          icon: 'none'
+        // 强制要求获取手机号，不允许跳过
+        console.log('获取手机号失败，详细错误：', res.result)
+        
+        let errorMessage = '获取手机号失败'
+        if (res.result.errCode === -604100) {
+          errorMessage = '手机号获取权限未配置，请联系管理员配置权限'
+        } else if (res.result.message) {
+          errorMessage = res.result.message
+        }
+        
+        // 显示错误信息，并提供重试和手动输入选项
+        wx.showModal({
+          title: '获取手机号失败',
+          content: errorMessage + '\n\n必须提供手机号才能完成登记',
+          cancelText: '手动输入',
+          confirmText: '重试',
+          success: (modalRes) => {
+            if (modalRes.confirm) {
+              // 重试获取手机号
+              wx.showToast({
+                title: '请重新授权手机号',
+                icon: 'none'
+              })
+            } else {
+              // 手动输入手机号
+              this.showPhoneInputDialog()
+            }
+          }
         })
-        this.saveVisitorInfoToCloud(this.data.userInfo, '获取手机号失败')
       }
     }).catch(err => {
       wx.hideLoading()
       console.error('调用云函数失败：', err)
-      wx.showToast({
+      
+      let errorMessage = '云函数调用失败'
+      if (err.errMsg && err.errMsg.includes('FunctionNotFound')) {
+        errorMessage = '云函数未部署，请检查云开发配置'
+      } else if (err.errCode === -604100) {
+        errorMessage = '手机号获取权限未配置'
+      }
+      
+      // 云函数调用失败，强制要求手动输入
+      wx.showModal({
         title: '获取手机号失败',
-        icon: 'none'
+        content: errorMessage + '\n\n必须提供手机号才能完成登记',
+        cancelText: '取消登记',
+        confirmText: '手动输入',
+        success: (modalRes) => {
+          if (modalRes.confirm) {
+            this.showPhoneInputDialog()
+          } else {
+            wx.navigateTo({
+              url: `/pages/result/result?success=false&communityName=${encodeURIComponent(this.data.communityName)}`
+            })
+          }
+        }
       })
-      this.saveVisitorInfoToCloud(this.data.userInfo, '获取手机号失败')
     })
-    
-    /* 原来的模拟方法，现在可以删除
-    setTimeout(() => {
-      wx.hideLoading()
-      const phoneNumber = '138****8888'
-      this.saveVisitorInfo(this.data.userInfo, phoneNumber)
-    }, 1000)
-    */
   },
 
   // 保存访客信息到云数据库
@@ -158,23 +238,57 @@ Page({
           url: `/pages/result/result?success=true&communityName=${encodeURIComponent(this.data.communityName)}`
         })
       } else {
-        wx.showToast({
-          title: res.result.message || '保存失败',
-          icon: 'none'
-        })
-        wx.navigateTo({
-          url: `/pages/result/result?success=false&communityName=${encodeURIComponent(this.data.communityName)}`
+        // 根据错误类型显示不同的错误信息
+        let errorMessage = '保存失败'
+        if (res.result.error && res.result.error.includes('DATABASE_COLLECTION_NOT_EXIST')) {
+          errorMessage = '数据库集合不存在，请先初始化数据库'
+        } else if (res.result.message) {
+          errorMessage = res.result.message
+        }
+        
+        wx.showModal({
+          title: '保存失败',
+          content: errorMessage + '，请联系管理员或重试',
+          showCancel: true,
+          cancelText: '返回',
+          confirmText: '重试',
+          success: (modalRes) => {
+            if (modalRes.confirm) {
+              // 重试保存
+              this.saveVisitorInfoToCloud(userInfo, phoneNumber)
+            } else {
+              wx.navigateTo({
+                url: `/pages/result/result?success=false&communityName=${encodeURIComponent(this.data.communityName)}`
+              })
+            }
+          }
         })
       }
     }).catch(err => {
       wx.hideLoading()
       console.error('调用保存云函数失败：', err)
-      wx.showToast({
+      
+      let errorMessage = '保存失败'
+      if (err.errMsg && err.errMsg.includes('FunctionNotFound')) {
+        errorMessage = '云函数未部署，请检查云开发配置'
+      }
+      
+      wx.showModal({
         title: '保存失败',
-        icon: 'none'
-      })
-      wx.navigateTo({
-        url: `/pages/result/result?success=false&communityName=${encodeURIComponent(this.data.communityName)}`
+        content: errorMessage + '，请联系管理员或重试',
+        showCancel: true,
+        cancelText: '返回',
+        confirmText: '重试',
+        success: (modalRes) => {
+          if (modalRes.confirm) {
+            // 重试保存
+            this.saveVisitorInfoToCloud(userInfo, phoneNumber)
+          } else {
+            wx.navigateTo({
+              url: `/pages/result/result?success=false&communityName=${encodeURIComponent(this.data.communityName)}`
+            })
+          }
+        }
       })
     })
   },
@@ -208,5 +322,81 @@ Page({
     wx.navigateTo({
       url: '/pages/admin/login'
     })
+  },
+
+  // 显示手动输入手机号对话框
+  showManualPhoneInput: function(errorMsg = '') {
+    const that = this
+    wx.showModal({
+      title: '手机号获取失败',
+      content: (errorMsg ? errorMsg + '\n\n' : '') + '请手动输入您的手机号码',
+      showCancel: true,
+      cancelText: '跳过',
+      confirmText: '输入',
+      success: (res) => {
+        if (res.confirm) {
+          // 显示输入框
+          that.showPhoneInputDialog()
+        } else {
+          // 跳过手机号，继续登记
+          that.saveVisitorInfoToCloud(that.data.userInfo, '用户跳过手机号输入')
+        }
+      }
+    })
+  },
+
+  // 显示手机号输入对话框 - 强制要求输入
+  showPhoneInputDialog: function() {
+    const that = this
+    wx.showModal({
+      title: '输入手机号',
+      content: '必须提供手机号才能完成登记\n请输入您的11位手机号码',
+      editable: true,
+      placeholderText: '请输入手机号',
+      cancelText: '取消登记',
+      confirmText: '确定',
+      success: (res) => {
+        if (res.confirm && res.content) {
+          const phoneNumber = res.content.trim()
+          
+          // 验证手机号格式
+          if (that.validatePhoneNumber(phoneNumber)) {
+            that.saveVisitorInfoToCloud(that.data.userInfo, phoneNumber)
+          } else {
+            wx.showModal({
+              title: '手机号格式错误',
+              content: '请输入正确的11位手机号码',
+              showCancel: false,
+              confirmText: '重新输入',
+              success: () => {
+                that.showPhoneInputDialog()
+              }
+            })
+          }
+        } else if (res.confirm && !res.content) {
+          // 用户点击确定但没有输入内容
+          wx.showModal({
+            title: '请输入手机号',
+            content: '手机号不能为空，请输入11位手机号码',
+            showCancel: false,
+            confirmText: '重新输入',
+            success: () => {
+              that.showPhoneInputDialog()
+            }
+          })
+        } else {
+          // 用户取消登记
+          wx.navigateTo({
+            url: `/pages/result/result?success=false&communityName=${encodeURIComponent(that.data.communityName)}`
+          })
+        }
+      }
+    })
+  },
+
+  // 验证手机号格式
+  validatePhoneNumber: function(phoneNumber) {
+    const phoneRegex = /^1[3-9]\d{9}$/
+    return phoneRegex.test(phoneNumber)
   }
 })
