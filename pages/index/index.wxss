@@ -1,0 +1,119 @@
+/* pages/index/index.wxss */
+.container {
+  height: 100vh;
+  background-color: #f8f8f8;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 顶部标题栏 */
+.header {
+  background-color: white;
+  padding: 20px;
+  text-align: center;
+  border-bottom: 1px solid #eee;
+}
+
+.header-title {
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+}
+
+/* 主要内容区域 */
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 20px;
+}
+
+.subtitle {
+  font-size: 20px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 40px;
+}
+
+/* 定位图标 */
+.location-icon {
+  margin-bottom: 40px;
+}
+
+.icon-circle {
+  width: 80px;
+  height: 80px;
+  background-color: #6B7280;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+}
+
+.icon-location {
+  font-size: 28px;
+  color: white;
+}
+
+/* 如果需要使用自定义图标，可以添加以下样式 */
+.icon-circle::before {
+  content: '';
+  width: 24px;
+  height: 24px;
+  background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJDOC4xMyAyIDUgNS4xMyA1IDlDNSAxNC4yNSAxMiAyMiAxMiAyMkMxMiAyMiAxOSAxNC4yNSAxOSA5QzE5IDUuMTMgMTUuODcgMiAxMiAyWk0xMiAxMS41QzEwLjYyIDExLjUgOS41IDEwLjM4IDkuNSA5QzkuNSA3LjYyIDEwLjYyIDYuNSAxMiA2LjVDMTMuMzggNi41IDE0LjUgNy42MiAxNC41IDlDMTQuNSAxMC4zOCAxMy4zOCAxMS41IDEyIDExLjVaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4K');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  position: absolute;
+}
+
+/* 物业信息 */
+.property-name {
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.address-info {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 60px;
+}
+
+/* 底部按钮区域 */
+.bottom-section {
+  padding: 20px;
+}
+
+.register-btn {
+  width: 100%;
+  background-color: #4ECDC4;
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  padding: 15px;
+  border-radius: 8px;
+  border: none;
+}
+
+.register-btn::after {
+  border: none;
+}
+
+/* 管理员入口样式 */
+.admin-entrance {
+  padding: 20px;
+  text-align: center;
+  border-top: 1px solid #eee;
+  background-color: white;
+}
+
+.admin-link {
+  color: #888;
+  font-size: 14px;
+  text-decoration: underline;
+}

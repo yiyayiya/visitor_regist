@@ -1,0 +1,45 @@
+<!--pages/result/result.wxml-->
+<view class="container">
+  <!-- 顶部标题栏 -->
+  <view class="header">
+    <view class="header-title">{{communityName}}</view>
+  </view>
+  
+  <!-- 主要内容区域 -->
+  <view class="main-content">
+    <!-- 成功图标 -->
+    <view class="success-icon" wx:if="{{success}}">
+      <view class="icon-circle success">
+        <text class="icon-check">✓</text>
+      </view>
+    </view>
+    
+    <!-- 失败图标 -->
+    <view class="error-icon" wx:if="{{!success}}">
+      <view class="icon-circle error">
+        <text class="icon-error">✗</text>
+      </view>
+    </view>
+    
+    <!-- 结果标题 -->
+    <view class="result-title">
+      {{success ? '登记成功' : '登记失败'}}
+    </view>
+    
+    <!-- 欢迎信息或错误信息 -->
+    <view class="welcome-message" wx:if="{{success}}">
+      欢迎到访 {{communityName}}
+    </view>
+    
+    <view class="error-message" wx:if="{{!success}}">
+      获取访客信息失败，请重试
+    </view>
+  </view>
+  
+  <!-- 重试按钮 -->
+  <view class="bottom-section" wx:if="{{!success}}">
+    <button class="retry-btn" bindtap="onRetry">
+      点击一键登记
+    </button>
+  </view>
+</view>

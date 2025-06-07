@@ -1,0 +1,8 @@
+<!--pages/admin/login.wxml-->
+<view class="container">
+  <view class="login-form">
+    <input class="input" placeholder="用户名" bindinput="onUsernameInput" />
+    <input class="input" placeholder="密码" password="true" bindinput="onPasswordInput" />
+    <button class="login-btn" bindtap="onLogin">登录</button>
+  </view>
+</view>

@@ -1,0 +1,116 @@
+/* pages/result/result.wxss */
+.container {
+  height: 100vh;
+  background-color: #f8f8f8;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 顶部标题栏 */
+.header {
+  background-color: white;
+  padding: 20px;
+  text-align: center;
+  border-bottom: 1px solid #eee;
+}
+
+.header-title {
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+}
+
+/* 主要内容区域 */
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 20px;
+}
+
+/* 成功图标 */
+.success-icon {
+  margin-bottom: 40px;
+}
+
+.icon-circle.success {
+  width: 100px;
+  height: 100px;
+  background-color: #4ECDC4;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.icon-check {
+  font-size: 48px;
+  color: white;
+  font-weight: bold;
+}
+
+/* 失败图标 */
+.error-icon {
+  margin-bottom: 40px;
+}
+
+.icon-circle.error {
+  width: 100px;
+  height: 100px;
+  background-color: #ff4757;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.icon-error {
+  font-size: 48px;
+  color: white;
+  font-weight: bold;
+}
+
+/* 结果标题 */
+.result-title {
+  font-size: 24px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 40px;
+}
+
+/* 欢迎信息 */
+.welcome-message {
+  font-size: 16px;
+  color: #ff9500;
+  text-align: center;
+}
+
+/* 错误信息 */
+.error-message {
+  font-size: 16px;
+  color: #666;
+  text-align: center;
+  margin-bottom: 60px;
+}
+
+/* 底部按钮区域 */
+.bottom-section {
+  padding: 20px;
+}
+
+.retry-btn {
+  width: 100%;
+  background-color: #4ECDC4;
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  padding: 15px;
+  border-radius: 8px;
+  border: none;
+}
+
+.retry-btn::after {
+  border: none;
+}

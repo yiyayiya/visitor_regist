@@ -1,0 +1,40 @@
+<!--pages/index/index.wxml-->
+<view class="container">
+  <!-- 顶部标题栏 -->
+  <view class="header">
+    <view class="header-title">{{communityName}}</view>
+  </view>
+  
+  <!-- 主要内容区域 -->
+  <view class="main-content">
+    <view class="subtitle">小区来访登记</view>
+    
+    <!-- 定位图标 -->
+    <view class="location-icon">
+      <view class="icon-circle">
+        <text class="icon-location">📍</text>
+      </view>
+    </view>
+    
+    <!-- 地址信息 -->
+    <view class="property-name">{{communityName}}物业</view>
+    <view class="address-info">{{areaName}} / {{cityName}}</view>
+  </view>
+  
+  <!-- 底部按钮区域 -->
+  <view class="bottom-section">
+    <!-- 一键登记按钮，包含获取手机号权限 -->
+    <button 
+      class="register-btn" 
+      open-type="getPhoneNumber" 
+      bindgetphonenumber="onGetPhoneNumber"
+      bindtap="onRegister">
+      点击一键登记
+    </button>
+  </view>
+  
+  <!-- 管理员入口 -->
+  <view class="admin-entrance">
+    <text class="admin-link" bindtap="onAdminLogin">管理员登录</text>
+  </view>
+</view>

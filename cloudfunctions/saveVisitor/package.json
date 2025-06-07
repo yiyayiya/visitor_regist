@@ -1,0 +1,9 @@
+{
+  "name": "saveVisitor",
+  "version": "1.0.0",
+  "description": "保存访客信息",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

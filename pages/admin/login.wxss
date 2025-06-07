@@ -1,0 +1,20 @@
+/* pages/admin/login.wxss */
+.container {
+  padding: 20px;
+}
+.login-form {
+  display: flex;
+  flex-direction: column;
+}
+.input {
+  margin-bottom: 20px;
+  padding: 10px;
+  border: 1px solid #cccccc;
+  border-radius: 5px;
+}
+.login-btn {
+  background-color: #1aad19;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+}

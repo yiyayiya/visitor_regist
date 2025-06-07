@@ -1,0 +1,47 @@
+<!--pages/admin/visitorList.wxml-->
+<view class="container">
+  <!-- 顶部工具栏 -->
+  <view class="toolbar">
+    <view class="filter">
+      <input 
+        class="filter-input" 
+        placeholder="按小区名称筛选" 
+        value="{{filterCommunity}}"
+        bindinput="onFilterInput" 
+      />
+    </view>
+    <button class="refresh-btn" bindtap="onRefresh" disabled="{{loading}}">
+      {{loading ? '加载中...' : '刷新'}}
+    </button>
+  </view>
+
+  <!-- 访客列表 -->
+  <view class="visitor-list">
+    <!-- 加载中状态 -->
+    <view class="loading" wx:if="{{loading}}">
+      <text>正在加载访客信息...</text>
+    </view>
+    
+    <!-- 空状态 -->
+    <view class="empty" wx:elif="{{filteredVisitors.length === 0}}">
+      <text>暂无访客记录</text>
+      <button class="retry-btn" bindtap="onRefresh">重新加载</button>
+    </view>
+    
+    <!-- 访客列表 -->
+    <view class="visitor-item" wx:for="{{filteredVisitors}}" wx:key="_id">
+      <image class="avatar" src="{{item.avatarUrl}}" mode="aspectFill" />
+      <view class="info">
+        <view class="name">{{item.nickName}}</view>
+        <view class="phone">{{item.phoneNumber}}</view>
+        <view class="location">{{item.cityName}}/{{item.areaName}}/{{item.communityName}}</view>
+        <view class="time">{{item.registerTime || item._createTime}}</view>
+      </view>
+    </view>
+  </view>
+  
+  <!-- 统计信息 -->
+  <view class="statistics" wx:if="{{!loading}}">
+    <text>共 {{filteredVisitors.length}} 条记录</text>
+  </view>
+</view>
