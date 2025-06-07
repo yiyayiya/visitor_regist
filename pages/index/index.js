@@ -11,8 +11,12 @@ Page({  data: {
     avatarUrl: defaultAvatarUrl, // 用户头像
     defaultAvatarUrl: defaultAvatarUrl, // 默认头像URL，供WXML使用
     nickName: '', // 用户昵称
-    userInfo: null // 存储用户基本信息
-  },onLoad: function (options) {
+    phoneNumber: '', // 用户手机号
+    userInfo: null, // 存储用户基本信息
+    isFromCache: false // 标识是否从缓存加载
+  },
+
+  onLoad: function (options) {
     // 页面加载时，解析传入的参数
     if (options.community_name && options.area_name && options.city_name) {
       this.setData({
@@ -25,6 +29,78 @@ Page({  data: {
       wx.setNavigationBarTitle({
         title: decodeURIComponent(options.community_name)
       })
+    }
+    
+    // 加载缓存的用户信息
+    this.loadCachedUserInfo()
+  },
+  // 加载缓存的用户信息
+  loadCachedUserInfo: function() {
+    try {
+      const cachedUserInfo = wx.getStorageSync('cached_user_info')
+      if (cachedUserInfo) {
+        // 检查缓存是否过期
+        if (this.isCacheExpired(cachedUserInfo)) {
+          console.log('缓存已过期，清除缓存')
+          wx.removeStorageSync('cached_user_info')
+          return
+        }
+        
+        console.log('发现缓存的用户信息:', cachedUserInfo)
+        this.setData({
+          avatarUrl: cachedUserInfo.avatarUrl || defaultAvatarUrl,
+          nickName: cachedUserInfo.nickName || '',
+          phoneNumber: cachedUserInfo.phoneNumber || '',
+          isFromCache: true
+        })
+        
+        // 如果有完整的用户信息，显示提示
+        if (cachedUserInfo.nickName && cachedUserInfo.phoneNumber) {
+          wx.showToast({
+            title: '已加载上次信息',
+            icon: 'success',
+            duration: 2000
+          })
+        }
+      }
+    } catch (e) {
+      console.log('读取缓存用户信息失败:', e)
+    }
+  },
+
+  // 保存用户信息到缓存
+  saveCachedUserInfo: function(userInfo, phoneNumber) {
+    try {
+      const cacheData = {
+        avatarUrl: userInfo.avatarUrl,
+        nickName: userInfo.nickName,
+        phoneNumber: phoneNumber,
+        lastUpdateTime: new Date().getTime()
+      }
+      wx.setStorageSync('cached_user_info', cacheData)
+      console.log('用户信息已保存到缓存:', cacheData)
+    } catch (e) {
+      console.log('保存用户信息到缓存失败:', e)
+    }
+  },
+
+  // 清除缓存的用户信息
+  clearCachedUserInfo: function() {
+    try {
+      wx.removeStorageSync('cached_user_info')
+      this.setData({
+        avatarUrl: defaultAvatarUrl,
+        nickName: '',
+        phoneNumber: '',
+        isFromCache: false
+      })
+      wx.showToast({
+        title: '已清除缓存信息',
+        icon: 'success'
+      })
+      console.log('缓存用户信息已清除')
+    } catch (e) {
+      console.log('清除缓存用户信息失败:', e)
     }
   },
     // 选择头像回调
@@ -44,9 +120,18 @@ Page({  data: {
     })
     console.log('用户输入昵称:', nickName)
   },
-  
-  // 点击一键登记按钮时的处理（现在主要是验证）
+    // 点击一键登记按钮时的处理（现在主要是验证）
   onRegister: function () {
+    // 如果有缓存的用户信息且完整，直接使用缓存信息进行登记
+    if (this.data.isFromCache && this.data.nickName && this.data.phoneNumber) {
+      const userInfo = {
+        avatarUrl: this.data.avatarUrl,
+        nickName: this.data.nickName.trim()
+      }
+      this.saveVisitorInfoToCloud(userInfo, this.data.phoneNumber)
+      return
+    }
+    
     // 验证用户是否已经填写了头像和昵称
     if (!this.data.avatarUrl || this.data.avatarUrl === defaultAvatarUrl) {
       wx.showToast({
@@ -74,10 +159,22 @@ Page({  data: {
     
     console.log('用户信息准备完成:', this.data.userInfo)
   },
-
   // 获取手机号回调
   onGetPhoneNumber: function (e) {
     console.log('手机号授权结果:', e)
+    
+    // 如果有缓存的手机号且用户基本信息完整，直接使用缓存
+    if (this.data.isFromCache && this.data.phoneNumber && 
+        this.data.avatarUrl && this.data.avatarUrl !== defaultAvatarUrl && 
+        this.data.nickName && this.data.nickName.trim() !== '') {
+      
+      const userInfo = {
+        avatarUrl: this.data.avatarUrl,
+        nickName: this.data.nickName.trim()
+      }
+      this.saveVisitorInfoToCloud(userInfo, this.data.phoneNumber)
+      return
+    }
     
     // 先验证用户是否已经填写了头像和昵称
     if (!this.data.avatarUrl || this.data.avatarUrl === defaultAvatarUrl) {
@@ -133,11 +230,14 @@ Page({  data: {
     }).then(res => {
       wx.hideLoading()
       console.log('云函数返回结果：', res.result)
-      
-      if (res.result.success) {
+        if (res.result.success) {
         const phoneNumber = res.result.phoneNumber
+        
+        // 保存用户信息到缓存
+        this.saveCachedUserInfo(this.data.userInfo, phoneNumber)
+        
         this.saveVisitorInfoToCloud(this.data.userInfo, phoneNumber)
-      } else {        // 获取手机号失败，直接跳转到登记失败界面
+      } else {// 获取手机号失败，直接跳转到登记失败界面
         console.log('获取手机号失败，详细错误：', res.result)
         wx.navigateTo({
           url: `/pages/result/result?success=false&communityName=${encodeURIComponent(this.data.communityName)}`
@@ -273,5 +373,24 @@ Page({  data: {
     wx.navigateTo({
       url: '/pages/admin/login'
     })
+  },
+
+  // 检查缓存是否过期（可选功能，7天过期）
+  isCacheExpired: function(cacheData) {
+    if (!cacheData || !cacheData.lastUpdateTime) {
+      return true
+    }
+    
+    const now = new Date().getTime()
+    const cacheTime = cacheData.lastUpdateTime
+    const expireTime = 7 * 24 * 60 * 60 * 1000 // 7天
+    
+    return (now - cacheTime) > expireTime
+  },
+
+  // 页面显示时刷新缓存状态
+  onShow: function() {
+    // 重新检查缓存状态，以防用户在其他地方清除了缓存
+    this.loadCachedUserInfo()
   }
 })

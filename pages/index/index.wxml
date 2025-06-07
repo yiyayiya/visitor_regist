@@ -13,8 +13,7 @@
         <button class="avatar-wrapper" open-type="chooseAvatar" bind:chooseavatar="onChooseAvatar">
           <image class="avatar" src="{{avatarUrl}}" mode="aspectFill"></image>
         </button>
-      </view>      <!-- 昵称输入 - 文字在左侧 -->
-      <view class="nickname-row">
+      </view>      <!-- 昵称输入 - 文字在左侧 -->      <view class="nickname-row">
         <text class="section-title">请选择昵称</text>
         <input 
           type="nickname" 
@@ -23,14 +22,13 @@
           value="{{nickName}}"
           bindinput="onNickNameInput"/>
       </view>
-    </view>
-    
-    <!-- 一键登记按钮 -->
+    </view>    <!-- 一键登记按钮 -->
     <view class="register-btn-row">
       <button 
         class="register-btn {{(!avatarUrl || avatarUrl === defaultAvatarUrl || !nickName) ? 'disabled' : ''}}" 
-        open-type="getPhoneNumber" 
+        open-type="{{isFromCache && phoneNumber ? '' : 'getPhoneNumber'}}" 
         bindgetphonenumber="onGetPhoneNumber"
+        bindtap="{{isFromCache && phoneNumber ? 'onRegister' : ''}}"
         disabled="{{!avatarUrl || avatarUrl === defaultAvatarUrl || !nickName}}">
         点击一键登记
       </button>
