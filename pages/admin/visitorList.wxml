@@ -59,8 +59,8 @@
           <view class="visitor-main-info">
             <view class="name">{{item.nickName}}</view>
             <view class="phone">{{item.phoneNumber}}</view>
-            <view class="location">{{item.cityName}}/{{item.areaName}}/{{item.communityName}}</view>
-            <view class="time">{{item.registerTime || item._createTime}}</view>
+            <view class="location">{{item.formattedAddress}}</view>
+            <view class="time">{{item.formattedTime}}</view>
           </view>
         </view>
         <!-- 电话按钮 -->

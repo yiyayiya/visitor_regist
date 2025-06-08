@@ -99,9 +99,16 @@ Page({
         
         // 处理头像URL，获取临时访问链接
         this.processAvatarUrls(allVisitors).then(processedVisitors => {
+          // 为每个访客添加格式化后的时间和地址
+          const visitorsWithFormattedData = processedVisitors.map(visitor => ({
+            ...visitor,
+            formattedTime: this.formatDateTime(visitor.registerTime || visitor._createTime),
+            formattedAddress: this.formatAddress(visitor.cityName, visitor.areaName, visitor.communityName)
+          }))
+          
           this.setData({
-            visitors: processedVisitors,
-            filteredVisitors: processedVisitors,
+            visitors: visitorsWithFormattedData,
+            filteredVisitors: visitorsWithFormattedData,
             loading: false,
             loadingMore: false,
             currentPage: loadMore ? this.data.currentPage + 1 : 1,
@@ -110,7 +117,7 @@ Page({
           
           // 同时更新全局数据
           const app = getApp()
-          app.globalData.visitors = processedVisitors
+          app.globalData.visitors = visitorsWithFormattedData
           
           if (loadMore && newVisitors.length > 0) {
             wx.showToast({
@@ -121,10 +128,16 @@ Page({
           }
         }).catch(error => {
           console.error('处理头像URL失败:', error)
-          // 即使头像处理失败，也要显示访客列表
+          // 即使头像处理失败，也要显示访客列表，并格式化时间和地址
+          const visitorsWithFormattedData = allVisitors.map(visitor => ({
+            ...visitor,
+            formattedTime: this.formatDateTime(visitor.registerTime || visitor._createTime),
+            formattedAddress: this.formatAddress(visitor.cityName, visitor.areaName, visitor.communityName)
+          }))
+          
           this.setData({
-            visitors: allVisitors,
-            filteredVisitors: allVisitors,
+            visitors: visitorsWithFormattedData,
+            filteredVisitors: visitorsWithFormattedData,
             loading: false,
             loadingMore: false,
             currentPage: loadMore ? this.data.currentPage + 1 : 1,
@@ -402,5 +415,51 @@ Page({
     this.setData({
       [visitorsUpdateKey]: defaultAvatar
     })
+  },
+
+  // 格式化地址信息
+  formatAddress: function(cityName, areaName, communityName) {
+    const parts = []
+    
+    if (cityName && cityName.trim()) {
+      parts.push(cityName.trim())
+    }
+    
+    if (areaName && areaName.trim()) {
+      parts.push(areaName.trim())
+    }
+    
+    if (communityName && communityName.trim()) {
+      parts.push(communityName.trim())
+    }
+    
+    return parts.length > 0 ? parts.join('/') : '小区信息空'
+  },
+
+  // 格式化时间为 年月日 时分 格式
+  formatDateTime: function(dateTime) {
+    if (!dateTime) return ''
+    
+    let date
+    if (typeof dateTime === 'string') {
+      date = new Date(dateTime)
+    } else if (dateTime instanceof Date) {
+      date = dateTime
+    } else {
+      // 处理云开发的时间戳格式
+      date = new Date(dateTime)
+    }
+    
+    if (isNaN(date.getTime())) {
+      return dateTime.toString() // 如果无法解析，返回原始值
+    }
+    
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    const hours = String(date.getHours()).padStart(2, '0')
+    const minutes = String(date.getMinutes()).padStart(2, '0')
+    
+    return `${year}年${month}月${day}日 ${hours}点${minutes}分`
   }
 })

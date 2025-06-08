@@ -8,6 +8,7 @@ Page({  data: {
     communityName: '',
     areaName: '',
     cityName: '',
+    formattedAddress: '', // 格式化后的地址信息
     avatarUrl: defaultAvatarUrl, // 用户头像
     defaultAvatarUrl: defaultAvatarUrl, // 默认头像URL，供WXML使用
     nickName: '', // 用户昵称
@@ -15,25 +16,36 @@ Page({  data: {
     userInfo: null, // 存储用户基本信息
     isFromCache: false // 标识是否从缓存加载
   },
-
   onLoad: function (options) {
     // 页面加载时，解析传入的参数
+    let communityName = '', areaName = '', cityName = ''
+    
     if (options.community_name && options.area_name && options.city_name) {
+      communityName = decodeURIComponent(options.community_name)
+      areaName = decodeURIComponent(options.area_name)  
+      cityName = decodeURIComponent(options.city_name)
+      
       this.setData({
-        communityName: decodeURIComponent(options.community_name),
-        areaName: decodeURIComponent(options.area_name),
-        cityName: decodeURIComponent(options.city_name)
+        communityName: communityName,
+        areaName: areaName,
+        cityName: cityName,
+        formattedAddress: this.formatAddress(cityName, areaName, communityName)
       })
       
       // 动态设置导航栏标题
       wx.setNavigationBarTitle({
-        title: decodeURIComponent(options.community_name)
+        title: communityName || '访客登记'
+      })
+    } else {
+      // 没有地址信息时的处理
+      this.setData({
+        formattedAddress: this.formatAddress('', '', '')
       })
     }
     
     // 加载缓存的用户信息
     this.loadCachedUserInfo()
-  },  // 加载缓存的用户信息
+  },// 加载缓存的用户信息
   loadCachedUserInfo: function() {
     try {
       const cachedUserInfo = wx.getStorageSync('cached_user_info')
@@ -471,5 +483,29 @@ Page({  data: {
         resolve(avatarUrl)
       }
     })
-  },
+  },  // 格式化地址信息
+  formatAddress: function(cityName, areaName, communityName) {
+    const parts = []
+    
+    // 如果有小区名称，只显示城市和区域
+    if (communityName && communityName.trim()) {
+      if (cityName && cityName.trim()) {
+        parts.push(cityName.trim())
+      }
+      if (areaName && areaName.trim()) {
+        parts.push(areaName.trim())
+      }
+      return parts.length > 0 ? parts.join(' / ') : ''
+    }
+    
+    // 如果没有小区名称，显示所有可用信息或者"小区信息为空"
+    if (cityName && cityName.trim()) {
+      parts.push(cityName.trim())
+    }
+    if (areaName && areaName.trim()) {
+      parts.push(areaName.trim())
+    }
+    
+    return parts.length > 0 ? parts.join(' / ') : '小区信息为空'
+  }
 })

@@ -87,6 +87,9 @@
 
 /* 底部按钮区域 */
 .bottom-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 20px;
   width: 100%;
   max-width: 400px;
@@ -94,14 +97,25 @@
 }
 
 .retry-btn {
-  width: 100%;
+  width: 180px; /* 与主页面登记按钮宽度一致 */
+  height: 40px; /* 与主页面登记按钮高度一致 */
   background-color: #4ECDC4;
   color: white;
-  font-size: 16px;
+  font-size: 14px; /* 与主页面登记按钮字体大小一致 */
   font-weight: bold;
-  padding: 15px;
-  border-radius: 8px;
+  padding: 0; /* 移除padding，因为高度已固定 */
+  border-radius: 20px; /* 与主页面登记按钮圆角一致 */
   border: none;
+  box-shadow: 0 4px 12px rgba(78, 205, 196, 0.3); /* 添加与主页面一致的阴影 */
+  transition: all 0.3s ease; /* 添加过渡效果 */
+  display: flex; /* 添加flex布局 */
+  align-items: center; /* 垂直居中 */
+  justify-content: center; /* 水平居中 */
+}
+
+.retry-btn:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 8px rgba(78, 205, 196, 0.4);
 }
 
 .retry-btn::after {
