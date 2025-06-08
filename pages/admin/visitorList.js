@@ -97,26 +97,40 @@ Page({
         // 检查是否还有更多数据
         const hasMore = res.result.hasMore || false
         
-        this.setData({
-          visitors: allVisitors,
-          filteredVisitors: allVisitors,
-          loading: false,
-          loadingMore: false,
-          currentPage: loadMore ? this.data.currentPage + 1 : 1,
-          hasMore: hasMore
-        })
-        
-        // 同时更新全局数据
-        const app = getApp()
-        app.globalData.visitors = allVisitors
-        
-        if (loadMore && newVisitors.length > 0) {
-          wx.showToast({
-            title: `已加载${newVisitors.length}条新数据`,
-            icon: 'success',
-            duration: 1500
+        // 处理头像URL，获取临时访问链接
+        this.processAvatarUrls(allVisitors).then(processedVisitors => {
+          this.setData({
+            visitors: processedVisitors,
+            filteredVisitors: processedVisitors,
+            loading: false,
+            loadingMore: false,
+            currentPage: loadMore ? this.data.currentPage + 1 : 1,
+            hasMore: hasMore
           })
-        }
+          
+          // 同时更新全局数据
+          const app = getApp()
+          app.globalData.visitors = processedVisitors
+          
+          if (loadMore && newVisitors.length > 0) {
+            wx.showToast({
+              title: `已加载${newVisitors.length}条新数据`,
+              icon: 'success',
+              duration: 1500
+            })
+          }
+        }).catch(error => {
+          console.error('处理头像URL失败:', error)
+          // 即使头像处理失败，也要显示访客列表
+          this.setData({
+            visitors: allVisitors,
+            filteredVisitors: allVisitors,
+            loading: false,
+            loadingMore: false,
+            currentPage: loadMore ? this.data.currentPage + 1 : 1,
+            hasMore: hasMore
+          })
+        })
       } else {
         wx.showToast({
           title: res.result.message || '加载失败',
@@ -160,6 +174,67 @@ Page({
           icon: 'none'
         })
       }
+    })
+  },
+
+  // 处理头像URL，获取临时访问链接
+  processAvatarUrls: function(visitors) {
+    return new Promise((resolve, reject) => {
+      // 收集所有需要处理的云存储头像URL
+      const cloudFileList = []
+      const fileIndexMap = new Map() // 记录文件URL对应的访客索引
+      
+      visitors.forEach((visitor, index) => {
+        if (visitor.avatarUrl && 
+            (visitor.avatarUrl.startsWith('cloud://') || visitor.avatarUrl.includes('.tcb.qcloud.la'))) {
+          cloudFileList.push(visitor.avatarUrl)
+          fileIndexMap.set(visitor.avatarUrl, index)
+        }
+      })
+      
+      if (cloudFileList.length === 0) {
+        // 没有云存储文件，直接返回
+        resolve(visitors)
+        return
+      }
+      
+      console.log('需要获取临时链接的文件:', cloudFileList)
+      
+      // 调用云函数获取临时访问链接
+      wx.cloud.callFunction({
+        name: 'getTempFileURL',
+        data: {
+          fileList: cloudFileList
+        }
+      }).then(res => {
+        console.log('获取临时链接结果:', res.result)
+        
+        if (res.result.success && res.result.fileList) {
+          // 更新访客数据中的头像URL
+          const processedVisitors = [...visitors]
+          
+          res.result.fileList.forEach(file => {
+            if (file.status === 0 && file.tempFileURL) {
+              // 找到对应的访客并更新头像URL
+              const visitorIndex = fileIndexMap.get(file.fileID)
+              if (visitorIndex !== undefined) {
+                processedVisitors[visitorIndex].displayAvatarUrl = file.tempFileURL
+                console.log(`更新访客${visitorIndex}的头像URL:`, file.tempFileURL)
+              }
+            } else {
+              console.warn('获取临时链接失败:', file)
+            }
+          })
+          
+          resolve(processedVisitors)
+        } else {
+          console.error('获取临时链接失败:', res.result)
+          resolve(visitors) // 失败时返回原始数据
+        }
+      }).catch(error => {
+        console.error('调用getTempFileURL云函数失败:', error)
+        resolve(visitors) // 失败时返回原始数据
+      })
     })
   },
 
@@ -305,6 +380,27 @@ Page({
           })
         }
       }
+    })
+  },
+
+  // 头像加载错误处理
+  onAvatarError: function (e) {
+    const index = e.currentTarget.dataset.index
+    console.log('头像加载失败，索引:', index, '错误:', e.detail)
+    
+    // 使用默认头像替换失败的头像
+    const defaultAvatar = 'https://mmbiz.qpic.cn/mmbiz/icTdbqWNOwNRna42FI242Lcia07jQodd2FJGIYQfG0LAJGFxM4FbnQP6yfMxBgJ0F3YRqJCJ1aPAK2dQagdusBZg/0'
+    
+    // 更新对应访客的头像URL
+    const updateKey = `filteredVisitors[${index}].avatarUrl`
+    this.setData({
+      [updateKey]: defaultAvatar
+    })
+    
+    // 同时更新原始访客列表中的头像
+    const visitorsUpdateKey = `visitors[${index}].avatarUrl`
+    this.setData({
+      [visitorsUpdateKey]: defaultAvatar
     })
   }
 })

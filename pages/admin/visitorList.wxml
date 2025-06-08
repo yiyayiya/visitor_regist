@@ -54,7 +54,7 @@
     <!-- 访客列表 -->
     <view class="visitor-list">
       <view class="visitor-item" wx:for="{{filteredVisitors}}" wx:key="_id">
-        <image class="avatar" src="{{item.avatarUrl}}" mode="aspectFill" />
+        <image class="avatar" src="{{item.displayAvatarUrl || item.avatarUrl}}" mode="aspectFill" binderror="onAvatarError" data-index="{{index}}" />
         <view class="info">
           <view class="visitor-main-info">
             <view class="name">{{item.nickName}}</view>

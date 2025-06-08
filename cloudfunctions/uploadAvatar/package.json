@@ -1,0 +1,10 @@
+{
+  "name": "uploadAvatar",
+  "version": "1.0.0",
+  "description": "上传头像到云存储",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3",
+    "request": "^2.88.2"
+  }
+}

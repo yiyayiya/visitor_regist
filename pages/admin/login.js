@@ -15,8 +15,18 @@ Page({
     })
   },
   onLogin: function () {
-    // 简单的登录验证
-    if (this.data.username === '13828852777' && this.data.password === 'LINAN123456') {
+    // 管理员账户配置
+    const adminAccounts = [
+      { username: '13828852777', password: 'LINAN123456' },
+      { username: '13632729342', password: 'kb123456' }
+    ]
+    
+    // 验证登录信息
+    const isValidAdmin = adminAccounts.some(admin => 
+      admin.username === this.data.username && admin.password === this.data.password
+    )
+    
+    if (isValidAdmin) {
       wx.navigateTo({
         url: '/pages/admin/visitorList'
       })

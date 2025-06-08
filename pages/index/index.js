@@ -33,8 +33,7 @@ Page({  data: {
     
     // 加载缓存的用户信息
     this.loadCachedUserInfo()
-  },
-  // 加载缓存的用户信息
+  },  // 加载缓存的用户信息
   loadCachedUserInfo: function() {
     try {
       const cachedUserInfo = wx.getStorageSync('cached_user_info')
@@ -47,8 +46,23 @@ Page({  data: {
         }
         
         console.log('发现缓存的用户信息:', cachedUserInfo)
+        
+        // 检查缓存的头像URL是否为临时URL，如果是则需要重新获取
+        let avatarUrl = cachedUserInfo.avatarUrl || defaultAvatarUrl
+        const isTemporaryUrl = avatarUrl.includes('wxfile://') || 
+                              avatarUrl.includes('http://tmp/') || 
+                              avatarUrl.includes('tmp_')
+        
+        if (isTemporaryUrl) {
+          console.log('检测到缓存头像为临时URL，使用默认头像:', avatarUrl)
+          avatarUrl = defaultAvatarUrl
+          // 清除缓存中的临时头像URL
+          this.clearCachedUserInfo()
+          return
+        }
+        
         this.setData({
-          avatarUrl: cachedUserInfo.avatarUrl || defaultAvatarUrl,
+          avatarUrl: avatarUrl,
           nickName: cachedUserInfo.nickName || '',
           phoneNumber: cachedUserInfo.phoneNumber || '',
           isFromCache: true
@@ -230,12 +244,11 @@ Page({  data: {
     }).then(res => {
       wx.hideLoading()
       console.log('云函数返回结果：', res.result)
-        if (res.result.success) {
+      
+      if (res.result.success) {
         const phoneNumber = res.result.phoneNumber
         
-        // 保存用户信息到缓存
-        this.saveCachedUserInfo(this.data.userInfo, phoneNumber)
-        
+        // 先保存访客信息到云端（包括头像转存）
         this.saveVisitorInfoToCloud(this.data.userInfo, phoneNumber)
       } else {// 获取手机号失败，直接跳转到登记失败界面
         console.log('获取手机号失败，详细错误：', res.result)
@@ -259,29 +272,48 @@ Page({  data: {
       })
     })
   },
-
   // 保存访客信息到云数据库
   saveVisitorInfoToCloud: function (userInfo, phoneNumber) {
     wx.showLoading({
       title: '正在保存信息'
-    })    // 调用云函数保存访客信息
-    wx.cloud.callFunction({
-      name: 'saveVisitor',
-      data: {
-        avatarUrl: userInfo.avatarUrl,
-        nickName: userInfo.nickName,
-        phoneNumber: phoneNumber,
-        communityName: this.data.communityName,
-        areaName: this.data.areaName,
-        cityName: this.data.cityName
-      }
+    })
+    
+    // 先处理头像上传（如果是临时文件）
+    this.uploadAvatarIfNeeded(userInfo.avatarUrl).then(finalAvatarUrl => {
+      console.log('头像处理完成，最终URL:', finalAvatarUrl)
+      
+      // 调用云函数保存访客信息
+      return wx.cloud.callFunction({
+        name: 'saveVisitor',
+        data: {
+          avatarUrl: finalAvatarUrl,
+          nickName: userInfo.nickName,
+          phoneNumber: phoneNumber,
+          communityName: this.data.communityName,
+          areaName: this.data.areaName,
+          cityName: this.data.cityName
+        }
+      })
     }).then(res => {
       wx.hideLoading()
       console.log('保存访客信息结果：', res.result)
-        if (res.result.success) {
+      
+      if (res.result.success) {
+        // 保存成功后，使用云端返回的数据（包含云存储头像URL）保存到缓存
+        const savedData = res.result.data
+        if (savedData && savedData.avatarUrl) {
+          // 使用云存储头像URL更新用户信息缓存
+          const userInfoWithCloudAvatar = {
+            avatarUrl: savedData.avatarUrl, // 使用云存储URL
+            nickName: savedData.nickName
+          }
+          this.saveCachedUserInfo(userInfoWithCloudAvatar, phoneNumber)
+          console.log('已使用云存储头像URL更新缓存:', savedData.avatarUrl)
+        }
+        
         // 同时保存到本地全局数据（为了管理员界面显示）
         const app = getApp()
-        app.globalData.visitors.push(res.result.data)
+        app.globalData.visitors.push(savedData)
         
         // 设置需要刷新访客列表的标志
         app.globalData.needRefreshVisitors = true
@@ -392,5 +424,52 @@ Page({  data: {
   onShow: function() {
     // 重新检查缓存状态，以防用户在其他地方清除了缓存
     this.loadCachedUserInfo()
-  }
+  },
+    // 处理头像上传（如果需要的话）
+  uploadAvatarIfNeeded: function(avatarUrl) {
+    return new Promise((resolve, reject) => {
+      console.log('检查头像URL是否需要上传:', avatarUrl)
+      
+      // 如果是默认头像或已经是云存储URL，直接返回
+      if (!avatarUrl || 
+          avatarUrl === defaultAvatarUrl || 
+          avatarUrl.includes('cloud://') || 
+          avatarUrl.includes('.tcb.qcloud.la')) {
+        console.log('头像无需上传，直接使用:', avatarUrl)
+        resolve(avatarUrl)
+        return
+      }
+      
+      // 如果是 wxfile:// 临时文件，需要先上传到云存储
+      if (avatarUrl.startsWith('wxfile://')) {
+        console.log('检测到临时文件，开始上传到云存储...')
+        wx.showLoading({
+          title: '正在上传头像'
+        })
+        
+        // 生成云存储文件路径
+        const timestamp = Date.now()
+        const cloudPath = `avatars/user_${timestamp}.jpg`
+        
+        wx.cloud.uploadFile({
+          cloudPath: cloudPath,
+          filePath: avatarUrl
+        }).then(uploadResult => {
+          wx.hideLoading()
+          console.log('头像上传到云存储成功:', uploadResult.fileID)
+          resolve(uploadResult.fileID)
+        }).catch(uploadError => {
+          wx.hideLoading()
+          console.error('头像上传失败:', uploadError)
+          // 上传失败时使用原始URL，不阻断流程
+          console.log('头像上传失败，使用原始URL继续流程')
+          resolve(avatarUrl)
+        })
+      } else {
+        // 其他类型的URL（https等）直接使用
+        console.log('使用原始头像URL:', avatarUrl)
+        resolve(avatarUrl)
+      }
+    })
+  },
 })
