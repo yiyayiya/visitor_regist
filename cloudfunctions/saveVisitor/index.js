@@ -13,15 +13,15 @@ const db = cloud.database()
 exports.main = async (event, context) => {
   const wxContext = cloud.getWXContext()
   
-  try {
-    // 获取传入的访客信息
+  try {    // 获取传入的访客信息
     const {
       avatarUrl,
       nickName,
       phoneNumber,
       communityName,
       areaName,
-      cityName
+      cityName,
+      doorName // 新增门名称参数
     } = event
       console.log('开始保存访客信息，原始头像URL:', avatarUrl)
     console.log('头像URL类型检测:', {
@@ -85,6 +85,7 @@ exports.main = async (event, context) => {
       communityName,
       areaName,
       cityName,
+      doorName, // 保存门名称
       registerTime: new Date(),
       _createTime: db.serverDate()
     }

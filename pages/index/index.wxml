@@ -1,8 +1,7 @@
 <!--pages/index/index.wxml-->
 <view class="container">
-  <!-- 主要内容区域 -->  <view class="main-content">
-    <view class="subtitle">小区来访登记</view>    <!-- 地址信息 -->
-    <view class="property-name" wx:if="{{communityName}}">{{communityName}}</view>
+  <!-- 主要内容区域 -->  <view class="main-content">    <view class="subtitle">小区来访登记</view>    <!-- 地址信息 -->
+    <view class="property-name" wx:if="{{communityName}}">{{communityName}}{{doorName ? doorName : ''}}</view>
     <view class="address-info">{{formattedAddress}}</view><!-- 用户信息填写区域 -->
     <view class="user-info-section">
       <!-- 头像选择 - 文字在左侧 -->

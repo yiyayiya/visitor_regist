@@ -23,7 +23,7 @@
     
     <!-- 欢迎信息或错误信息 -->
     <view class="welcome-message" wx:if="{{success}}">
-      欢迎到访 {{communityName}}
+      欢迎到访 {{communityName}}{{doorName ? doorName : ''}}
     </view>
     
     <view class="error-message" wx:if="{{!success}}">

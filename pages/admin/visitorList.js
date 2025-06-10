@@ -103,7 +103,7 @@ Page({
           const visitorsWithFormattedData = processedVisitors.map(visitor => ({
             ...visitor,
             formattedTime: this.formatDateTime(visitor.registerTime || visitor._createTime),
-            formattedAddress: this.formatAddress(visitor.cityName, visitor.areaName, visitor.communityName)
+            formattedAddress: this.formatAddress(visitor.cityName, visitor.areaName, visitor.communityName, visitor.doorName)
           }))
           
           this.setData({
@@ -132,7 +132,7 @@ Page({
           const visitorsWithFormattedData = allVisitors.map(visitor => ({
             ...visitor,
             formattedTime: this.formatDateTime(visitor.registerTime || visitor._createTime),
-            formattedAddress: this.formatAddress(visitor.cityName, visitor.areaName, visitor.communityName)
+            formattedAddress: this.formatAddress(visitor.cityName, visitor.areaName, visitor.communityName, visitor.doorName)
           }))
           
           this.setData({
@@ -418,7 +418,7 @@ Page({
   },
 
   // 格式化地址信息
-  formatAddress: function(cityName, areaName, communityName) {
+  formatAddress: function(cityName, areaName, communityName, doorName) {
     const parts = []
     
     if (cityName && cityName.trim()) {
@@ -430,7 +430,12 @@ Page({
     }
     
     if (communityName && communityName.trim()) {
-      parts.push(communityName.trim())
+      // 如果有门信息，加到小区名称后面
+      if (doorName && doorName.trim()) {
+        parts.push(communityName.trim() + doorName.trim())
+      } else {
+        parts.push(communityName.trim())
+      }
     }
     
     return parts.length > 0 ? parts.join('/') : '小区信息空'

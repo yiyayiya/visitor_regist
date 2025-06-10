@@ -15,21 +15,26 @@ Page({  data: {
     phoneNumber: '', // 用户手机号
     userInfo: null, // 存储用户基本信息
     isFromCache: false // 标识是否从缓存加载
-  },
-  onLoad: function (options) {
+  },  onLoad: function (options) {
     // 页面加载时，解析传入的参数
-    let communityName = '', areaName = '', cityName = ''
+    let communityName = '', areaName = '', cityName = '', doorName = ''
     
     if (options.community_name && options.area_name && options.city_name) {
       communityName = decodeURIComponent(options.community_name)
       areaName = decodeURIComponent(options.area_name)  
       cityName = decodeURIComponent(options.city_name)
       
+      // 处理可选的门名称参数
+      if (options.door_name) {
+        doorName = decodeURIComponent(options.door_name)
+      }
+      
       this.setData({
         communityName: communityName,
         areaName: areaName,
         cityName: cityName,
-        formattedAddress: this.formatAddress(cityName, areaName, communityName)
+        doorName: doorName,
+        formattedAddress: this.formatAddress(cityName, areaName, communityName, doorName)
       })
       
       // 动态设置导航栏标题
@@ -39,7 +44,7 @@ Page({  data: {
     } else {
       // 没有地址信息时的处理
       this.setData({
-        formattedAddress: this.formatAddress('', '', '')
+        formattedAddress: this.formatAddress('', '', '', '')
       })
     }
     
@@ -232,11 +237,10 @@ Page({  data: {
     if (e.detail.errMsg === 'getPhoneNumber:ok') {
       // 手机号获取成功
       const phoneCode = e.detail.code
-      this.decodePhoneNumber(phoneCode)    } else {
-      // 获取手机号失败，直接跳转到登记失败界面
+      this.decodePhoneNumber(phoneCode)    } else {      // 获取手机号失败，直接跳转到登记失败界面
       console.log('用户拒绝授权手机号或获取失败')
       wx.navigateTo({
-        url: `/pages/result/result?success=false&communityName=${encodeURIComponent(this.data.communityName)}`
+        url: `/pages/result/result?success=false&communityName=${encodeURIComponent(this.data.communityName)}${this.data.doorName ? '&doorName=' + encodeURIComponent(this.data.doorName) : ''}`
       })
     }
   },
@@ -262,10 +266,9 @@ Page({  data: {
         
         // 先保存访客信息到云端（包括头像转存）
         this.saveVisitorInfoToCloud(this.data.userInfo, phoneNumber)
-      } else {// 获取手机号失败，直接跳转到登记失败界面
-        console.log('获取手机号失败，详细错误：', res.result)
+      } else {// 获取手机号失败，直接跳转到登记失败界面        console.log('获取手机号失败，详细错误：', res.result)
         wx.navigateTo({
-          url: `/pages/result/result?success=false&communityName=${encodeURIComponent(this.data.communityName)}`
+          url: `/pages/result/result?success=false&communityName=${encodeURIComponent(this.data.communityName)}${this.data.doorName ? '&doorName=' + encodeURIComponent(this.data.doorName) : ''}`
         })
       }
     }).catch(err => {
@@ -277,10 +280,9 @@ Page({  data: {
         errorMessage = '云函数未部署，请检查云开发配置'
       } else if (err.errCode === -604100) {
         errorMessage = '手机号获取权限未配置'
-      }
-        // 云函数调用失败，直接跳转到登记失败界面
+      }      // 云函数调用失败，直接跳转到登记失败界面
       wx.navigateTo({
-        url: `/pages/result/result?success=false&communityName=${encodeURIComponent(this.data.communityName)}`
+        url: `/pages/result/result?success=false&communityName=${encodeURIComponent(this.data.communityName)}&areaName=${encodeURIComponent(this.data.areaName || '')}&doorName=${encodeURIComponent(this.data.doorName || '')}`
       })
     })
   },
@@ -303,7 +305,8 @@ Page({  data: {
           phoneNumber: phoneNumber,
           communityName: this.data.communityName,
           areaName: this.data.areaName,
-          cityName: this.data.cityName
+          cityName: this.data.cityName,
+          doorName: this.data.doorName || '' // 增加门名称参数
         }
       })
     }).then(res => {
@@ -329,9 +332,8 @@ Page({  data: {
         
         // 设置需要刷新访客列表的标志
         app.globalData.needRefreshVisitors = true
-        
-        wx.navigateTo({
-          url: `/pages/result/result?success=true&communityName=${encodeURIComponent(this.data.communityName)}`
+          wx.navigateTo({
+          url: `/pages/result/result?success=true&communityName=${encodeURIComponent(this.data.communityName)}${this.data.doorName ? '&doorName=' + encodeURIComponent(this.data.doorName) : ''}`
         })
       } else {
         // 根据错误类型显示不同的错误信息
@@ -398,6 +400,7 @@ Page({  data: {
       communityName: this.data.communityName,
       areaName: this.data.areaName,
       cityName: this.data.cityName,
+      doorName: this.data.doorName || '', // 增加门名称参数
       registerTime: new Date().toLocaleString()
     }
     
@@ -406,10 +409,9 @@ Page({  data: {
     app.globalData.visitors.push(visitorInfo)
     
     console.log('访客信息已保存:', visitorInfo)
-    
-    // 跳转到结果页面
+      // 跳转到结果页面
     wx.navigateTo({
-      url: `/pages/result/result?success=true&communityName=${encodeURIComponent(this.data.communityName)}`
+      url: `/pages/result/result?success=true&communityName=${encodeURIComponent(this.data.communityName)}&areaName=${encodeURIComponent(this.data.areaName || '')}&doorName=${encodeURIComponent(this.data.doorName || '')}`
     })
   },
     // 管理员登录入口
@@ -484,7 +486,7 @@ Page({  data: {
       }
     })
   },  // 格式化地址信息
-  formatAddress: function(cityName, areaName, communityName) {
+  formatAddress: function(cityName, areaName, communityName, doorName) {
     const parts = []
     
     // 如果有小区名称，只显示城市和区域
@@ -495,6 +497,7 @@ Page({  data: {
       if (areaName && areaName.trim()) {
         parts.push(areaName.trim())
       }
+      // 门名称不会显示在格式化地址中，而是和小区名称一起显示
       return parts.length > 0 ? parts.join(' / ') : ''
     }
     
